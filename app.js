@@ -9,6 +9,11 @@ const {koaBody} = require('koa-body')
 //加密
 const bcrypt = require('bcrypt')
 
+let userinfo ={
+    username:'admin',
+    password:'$2b$10$gAOHfKlTtmx0sonfEqvqDORMs5dLWb6pPMRsl2Ds8StWe2rXv2gQ6'
+}
+
 
 app.use(koaBody())
 const router =new Router()
@@ -67,6 +72,30 @@ router.post('/register',ctx=>{
         
 //     }
 // })
+router.post('/login',ctx=>{
+    let {username,password} = ctx.request.body
+    if(!username.trim()||!password.trim()) {
+        ctx.body = {
+            code:10010,
+            msg:'缺少必要参数'
+        }
+        return
+    }
+    //密码比较
+    //存放的注册信息密码
+    let types = bcrypt.compareSync(password,userinfo.password)
+    if(types) {
+        ctx.body={
+            code:200,
+            msg:'登录成功'
+        }
+    }else {
+        ctx.body={
+            code:10012,
+            msg:'密码错误'
+        }
+    }
+})
 
 app.use(router.routes())
 app.use(router.allowedMethods())
