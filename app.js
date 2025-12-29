@@ -17,7 +17,8 @@ let userinfo = {
     password: '$2b$10$gAOHfKlTtmx0sonfEqvqDORMs5dLWb6pPMRsl2Ds8StWe2rXv2gQ6'
 }
 
-
+//跨域代理
+app.use(cors())
 app.use(koaBody())
 const router = new Router()
 
