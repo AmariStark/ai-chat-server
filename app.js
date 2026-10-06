@@ -12,6 +12,11 @@ var cors = require("koa2-cors")
 //加密
 const bcrypt = require('bcrypt')
 
+// 大模型相关配置统一从环境变量读取，不要把密钥写进代码
+const SPARK_API_URL = process.env.SPARK_API_URL || 'https://spark-api-open.xf-yun.com/v1/chat/completions'
+const SPARK_API_KEY = process.env.SPARK_API_KEY || ''
+const SPARK_MODEL = process.env.SPARK_MODEL || '4.0Ultra'
+
 let userinfo = {
     username: 'admin',
     password: '$2b$10$gAOHfKlTtmx0sonfEqvqDORMs5dLWb6pPMRsl2Ds8StWe2rXv2gQ6'
@@ -45,7 +50,9 @@ router.post('/add', ctx => {
 router.post('/register', ctx => {
     // 1.获取参数
     console.log(ctx.request.body);
-    let { username, password } = ctx.request.body
+    let { username = '', password = '' } = ctx.request.body || {}
+    username = String(username)
+    password = String(password)
     if (!username.trim() || !password.trim()) {
         ctx.body = {
             code: 10010,
@@ -77,7 +84,9 @@ router.post('/register', ctx => {
 //     }
 // })
 router.post('/login', ctx => {
-    let { username, password } = ctx.request.body
+    let { username = '', password = '' } = ctx.request.body || {}
+    username = String(username)
+    password = String(password)
     if (!username.trim() || !password.trim()) {
         ctx.body = {
             code: 10010,
@@ -91,7 +100,8 @@ router.post('/login', ctx => {
     if (types) {
         ctx.body = {
             code: 200,
-            msg: '登录成功'
+            msg: '登录成功',
+            name:'Amari'
         }
     } else {
         ctx.body = {
@@ -104,30 +114,46 @@ router.post('/login', ctx => {
 router.post('/axios', async (ctx) => {
     //获取参数
     let content = ctx.request.body.content||''
-    //用来发起星火的网络请求
-    let res = await axios({
-        url: 'https://spark-api-open.xf-yun.com/v1/chat/completions',
-        method: "post",
-        headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer njKiMtXJkEvbkauCvuuF:nhPqlajTGfOYTPXAIyKM",
-        },
-        data: {
-            "model": "4.0Ultra",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": content
-                }
-            ]
+    if (!SPARK_API_KEY) {
+        ctx.status = 500
+        ctx.body = {
+            code: 10013,
+            msg: '未配置大模型密钥，请在 .env 中设置 SPARK_API_KEY'
         }
-    })
-    ctx.body = {
-        code:200,
-        mag:'请求成功',
-        data:res.data
+        return
     }
-
+    //用来发起星火的网络请求
+    try {
+        let res = await axios({
+            url: SPARK_API_URL,
+            method: "post",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + SPARK_API_KEY,
+            },
+            data: {
+                "model": SPARK_MODEL,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": content
+                    }
+                ]
+            }
+        })
+        ctx.body = {
+            code: 200,
+            msg: '请求成功',
+            data: res.data
+        }
+    } catch (err) {
+        ctx.status = 502
+        ctx.body = {
+            code: 10014,
+            msg: '大模型调用失败',
+            error: err.message
+        }
+    }
 })
 
 app.use(router.routes())
@@ -167,8 +193,9 @@ console.log('热修改打印')
 //     next()
 // })
 // 启动服务
-app.listen(3000, () => {
-    console.log('服务已经启动地址是：http://localhost:3000');
-    console.log('服务已经启动地址是：http://127.0.0.1:3000');
+const PORT = Number(process.env.PORT) || 3000
+app.listen(PORT, () => {
+    console.log('服务已经启动地址是：http://localhost:' + PORT);
+    console.log('服务已经启动地址是：http://127.0.0.1:' + PORT);
 })
 // 在终端中执行 node app.js 

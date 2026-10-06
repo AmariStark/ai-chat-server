@@ -4,6 +4,15 @@ bin-release/
 [Oo]bj/
 [Bb]in/
 
+# 依赖与运行时
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# 环境变量（含密钥，禁止提交）
+.env
+.env.local
+
 # Other files and folders
 .settings/
 
